@@ -1,54 +1,89 @@
-// src/server.ts (or .mjs if renamed)
 import express from "express";
-import http from "http";
 import { Server } from "socket.io";
-import cors from "cors";
-import path from 'path'; // Required to access the file system
+import http from "http";
+import axios from "axios"; // For calling ChatGPT API
+import OpenAI from "openai";
+import { ChatCompletionMessageParam } from "openai/resources";
 
 const app = express();
 const server = http.createServer(app);
-const io = new Server(server);
-
-// Middleware
-app.use(express.json());
-app.use(cors());
-//app.use("/api/auth", authRoutes);
-
-app.use(express.static(path.join(__dirname, "../public")));
-
-
-app.get("/chatboat", (req, res) => {
-  res.sendFile(path.join(__dirname, "../public", "index.html"));
+const io = new Server(server, {
+  cors: {
+    origin: "*",
+  },
 });
 
+const PORT = 3000;
 
+// Store chat history in memory (use a database for production)
+const chatHistory: {
+  [sessionId: string]: ChatCompletionMessageParam[];
+} = {};
+
+// OpenAI API setup (replace with your own API key)
+const openai = new OpenAI({
+  apiKey:
+    "sk--BhYvPaVIMalKIpTsd7xGZCHCdQ0RhHEQE80hAo_UYT3BlbkFJvxlTX_G-LQm615U-Ot6TskeW_aGHDnqzWX62wKlP8A", // This is the default and can be omitted
+});
+
+// Handle new connections
 io.on("connection", (socket) => {
-  console.log("New client connected", socket.id);
+  console.log(`User connected: ${socket.id}`);
 
-  // Join a specific room (you can customize room assignment logic)
-  socket.on("join-room", (room) => {
-    socket.join(room);
-    console.log(`User joined room: ${room}`);
+  // Listen for 'send-message' from client
+  socket.on("send-message", async (data) => {
+    const { user, message } = data;
+    const sessionId = socket.id;
+
+    // Initialize session if not existing
+    if (!chatHistory[sessionId]) {
+      chatHistory[sessionId] = [];
+    }
+
+    // Add user's message to chat history
+    chatHistory[sessionId].push({ role: "user", content: message });
+
+    // Prepare messages for ChatGPT
+    const messages: ChatCompletionMessageParam[] = chatHistory[sessionId];
+
+    try {
+      console.log(messages);
+      
+      // Send the chat history to ChatGPT API
+      const response = await openai.chat.completions.create({
+        model: "gpt-4", // Use the desired GPT model
+        messages,
+      });
+
+      const botResponse = response.choices[0].message?.content;
+
+      // Add ChatGPT's response to chat history
+      chatHistory[sessionId].push({
+        role: "assistant",
+        content: botResponse || "",
+      });
+
+      // Send the response back to the user
+      socket.emit("receive-message", { user: "ChatGPT", message: botResponse });
+    } catch (error) {
+      console.error("Error communicating with ChatGPT API:", error);
+      socket.emit("receive-message", {
+        user: "ChatGPT",
+        message: "Error processing your request.",
+      });
+    }
   });
 
-  // Listen for messages from the client
-  socket.on("send-message", (data) => {
-    console.log("Message received:", data);
-
-    // Emit the message to only the users in the specific room
-    io.to(data.room).emit("receive-message", {
-      message: data.message,
-      user: data.user,
-    });
-  });
-
-  // Handle disconnect
+  // Handle disconnection
   socket.on("disconnect", () => {
-    console.log("Client disconnected", socket.id);
+    console.log(`User disconnected: ${socket.id}`);
   });
 });
 
-const PORT = process.env.PORT || 5001;
+app.get("/test", (req, res) => {
+  res.send("Hello World!");
+});
+
 server.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
+  console.log(`Server is running on port localhost:${PORT}`);
 });
