@@ -4,6 +4,9 @@ import http from "http";
 import axios from "axios"; // For calling ChatGPT API
 import OpenAI from "openai";
 import { ChatCompletionMessageParam } from "openai/resources";
+const fs = require("fs");
+const path = require("path");
+
 
 import dotenv from "dotenv";
 import { getBacktestResults, login, runBacktest, transformStrategy } from "./backtesting/service";
@@ -18,7 +21,7 @@ const io = new Server(server, {
   },
 });
 
-const PORT = 3000;
+const PORT = 8000;
 
 // Store chat history in memory (use a database for production)
 const chatHistory: {
@@ -89,7 +92,7 @@ app.get("/test", (req, res) => {
 });
 
 app.post("/login", async (req, res) => {
-  const csrfToken = await login(req.body.token);
+  const csrfToken = await login(process.env.TOKEN as string);
   res.send(csrfToken);
 });
 
@@ -98,9 +101,24 @@ server.listen(PORT, () => {
 });
 
 app.post("/backtest", async (req, res) => {
-  const strategy = transformStrategy(req.body)
-  const backtestResponse = await runBacktest(strategy)
-  const backtestResults = await getBacktestResults(backtestResponse.backtest_id)
-  res.send(backtestResults)
+  try {
+    await login(process.env.TOKEN as string)
+    const strategy = transformStrategy(req.body)
+    const outputFilePath = path.join(__dirname, "../strategyOutput.json");
+    fs.writeFileSync(outputFilePath, JSON.stringify(strategy, null, 2))
+    const backtestResponse = await runBacktest(strategy)
+    res.send(backtestResponse)
+  } catch (err) {
+    const errorFilePath = path.join(__dirname, "../src/backtesting/constants/errorResponse.json");
+    const jsonData = fs.readFileSync(errorFilePath, 'utf-8');
+    const jsonResponse = JSON.parse(jsonData);
+    res.send(jsonResponse)
+  }
 })
+
+app.get("/backtestDetails/:backtestId", async (req, res) => {
+  const { backtestId } = req.params;
+  const backTestDetails = await getBacktestResults(backtestId);
+  res.send(backTestDetails);
+});
 
