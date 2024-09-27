@@ -4,23 +4,19 @@ import http from "http";
 import axios from "axios"; // For calling ChatGPT API
 import OpenAI from "openai";
 import { ChatCompletionMessageParam } from "openai/resources";
-import cookieParser from "cookie-parser";
-import bodyParser from "body-parser";
 
 import dotenv from "dotenv";
-import { login } from "./backtesting/service";
+import { getBacktestResults, login, runBacktest, transformStrategy } from "./backtesting/service";
 dotenv.config();
 
 const app = express();
+app.use(express.json());
 const server = http.createServer(app);
 const io = new Server(server, {
   cors: {
     origin: "*",
   },
 });
-
-app.use(cookieParser());
-app.use(bodyParser.json());
 
 const PORT = 3000;
 
@@ -56,7 +52,7 @@ io.on("connection", (socket) => {
 
     try {
       console.log(messages);
-      
+
       // Send the chat history to ChatGPT API
       const response = await openai.chat.completions.create({
         model: "gpt-4", // Use the desired GPT model
@@ -100,3 +96,11 @@ app.post("/login", async (req, res) => {
 server.listen(PORT, () => {
   console.log(`Server is running on port localhost:${PORT}`);
 });
+
+app.post("/backtest", async (req, res) => {
+  const strategy = transformStrategy(req.body)
+  const backtestResponse = await runBacktest(strategy)
+  const backtestResults = await getBacktestResults(backtestResponse.backtest_id)
+  res.send(backtestResults)
+})
+
