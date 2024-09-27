@@ -218,8 +218,25 @@ export async function getBacktestResults(backtestId: string) {
                 'Cookie': COOKIES.join('; ')
             }
         });
+        response.data.graph = compute_graph(response.data?.results?.trade_wise_results);
         return response.data;
     } catch (error) {
         throw error;
     }
+}
+
+function compute_graph(data: any) {
+    const graph = [];
+    let previousSum = 0;
+    for (let i = 0; i < data.length; i++) {
+        const row = [];
+        const data_value = data[i][6]
+        row.push(data[i][0]);
+        const data_point_1 = (data_value[0][0] - data_value[0][1]) * data_value[0][2];
+        const data_point_2 = (data_value[1][0] - data_value[1][1]) * data_value[1][2];
+        row.push(previousSum + data_point_1 + data_point_2);
+        graph.push(row);
+        previousSum = previousSum + data_point_1 + data_point_2;
+    }
+    return graph;
 }
