@@ -1,0 +1,21 @@
+{
+  "name": "quantedge-be",
+  "version": "1.0.0",
+  "description": "QuantEdge Backend",
+  "main": "index.js",
+  "scripts": {
+    "start": "tsc && node dist/app.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@types/express": "^5.0.0",
+    "typescript": "^5.6.2"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^4.21.0",
+    "socket.io": "^4.8.0"
+  }
+}
