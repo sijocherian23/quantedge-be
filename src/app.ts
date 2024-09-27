@@ -4,8 +4,11 @@ import http from "http";
 import axios from "axios"; // For calling ChatGPT API
 import OpenAI from "openai";
 import { ChatCompletionMessageParam } from "openai/resources";
+import cookieParser from "cookie-parser";
+import bodyParser from "body-parser";
 
 import dotenv from "dotenv";
+import { login } from "./backtesting/service";
 dotenv.config();
 
 const app = express();
@@ -16,7 +19,8 @@ const io = new Server(server, {
   },
 });
 
-
+app.use(cookieParser());
+app.use(bodyParser.json());
 
 const PORT = 3000;
 
@@ -86,6 +90,11 @@ io.on("connection", (socket) => {
 
 app.get("/test", (req, res) => {
   res.send("Hello World!");
+});
+
+app.post("/login", async (req, res) => {
+  const csrfToken = await login(req.body.token);
+  res.send(csrfToken);
 });
 
 server.listen(PORT, () => {
