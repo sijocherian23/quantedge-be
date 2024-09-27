@@ -5,6 +5,9 @@ import axios from "axios"; // For calling ChatGPT API
 import OpenAI from "openai";
 import { ChatCompletionMessageParam } from "openai/resources";
 
+import dotenv from "dotenv";
+dotenv.config();
+
 const app = express();
 const server = http.createServer(app);
 const io = new Server(server, {
@@ -12,6 +15,8 @@ const io = new Server(server, {
     origin: "*",
   },
 });
+
+
 
 const PORT = 3000;
 
@@ -22,8 +27,7 @@ const chatHistory: {
 
 // OpenAI API setup (replace with your own API key)
 const openai = new OpenAI({
-  apiKey:
-    "sk--BhYvPaVIMalKIpTsd7xGZCHCdQ0RhHEQE80hAo_UYT3BlbkFJvxlTX_G-LQm615U-Ot6TskeW_aGHDnqzWX62wKlP8A", // This is the default and can be omitted
+  apiKey: process.env.OPENAI_API_KEY,
 });
 
 // Handle new connections
