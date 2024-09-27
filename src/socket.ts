@@ -120,10 +120,48 @@ export const initializeSocket = (io: Server) => {
           message: botResponse,
         });
       } catch (error) {
+        const errorMessage = {
+          message: "Error processing your request.Please Try again Later",
+          json_obj: {
+            strategy_name: "Straddle",
+            asset: {
+              symbol: "NIFTY",
+              type: ["CE", "PE"],
+              expiry: {
+                cycle: "weekly",
+                frequency: "monthly",
+              },
+            },
+            entry_trigger: {
+              type: "time",
+              value: "1045",
+            },
+            contract_value: {
+              type: "between",
+              value: [2, 5],
+            },
+            lot_size: 75,
+            risk_management: {
+              stop_loss: {
+                type: "percentage",
+                value: 500,
+              },
+              take_profit: {
+                type: "percentage",
+                value: 100,
+              },
+            },
+            exit_time: "1515",
+            actions: {
+              entry: "sell",
+              exit: "buy",
+            },
+          },
+        };
         console.error("Error communicating with AI:", error);
         socket.emit("receive-message", {
           user: "Bot",
-          message: "Error processing your request.Please Try again Later",
+          message: errorMessage,
         });
       }
     });
