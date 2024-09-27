@@ -15,13 +15,18 @@ dotenv.config();
 const app = express();
 app.use(express.json());
 const server = http.createServer(app);
+app.use((req, res, next) => {
+  res.header("Access-Control-Allow-Origin", "*");
+  res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
+  next();
+});
 const io = new Server(server, {
   cors: {
     origin: "*",
   },
 });
 
-const PORT = 8000;
+const PORT = 3000;
 
 // Store chat history in memory (use a database for production)
 const chatHistory: {
