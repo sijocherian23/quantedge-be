@@ -121,7 +121,7 @@ app.post("/backtest", async (req, res) => {
   }
 })
 
-app.get("/backtestDetails/:backtestId", async (req, res) => {
+app.post("/backtestDetails/:backtestId", async (req, res) => {
   const { backtestId } = req.params;
   const backTestDetails = await getBacktestResults(backtestId);
   res.send(backTestDetails);
