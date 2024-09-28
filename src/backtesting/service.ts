@@ -45,6 +45,7 @@ export async function runBacktest(strategy: any) {
         const response = await axios.post(url, strategy, { headers });
         return response.data;
     } catch (error: any) {
+        console.log(error);
         throw error;
     }
 }
@@ -54,12 +55,11 @@ export function transformStrategy(strategy: any) {
     const lotSize = strategy.lot_size;
     const stopLossValue = strategy.risk_management.stop_loss.value;
     const takeProfitValue = strategy.risk_management.take_profit.value;
-    const entryTime = formatTime(strategy.entry_trigger.value).split(':');
-    const exitTime = formatTime(strategy.exit_time).split(':');
+    const entryTime = formatTime(`${strategy.entry_trigger.value}`).split(':');
+    const exitTime = formatTime(`${strategy.entry_trigger.value}`).split(':');
     const contractValueType: string = strategy.contract_value.type;
     const entryType = contractValueTypeMap.get(contractValueType.toUpperCase())
     const strikeParameter = getStrikeParameter(strategy.contract_value.value, contractValueType.toUpperCase());
-
     const output = {
         strategy_id: null,
         name: strategy.strategy_name || "Unsaved Strategy",
@@ -204,11 +204,10 @@ export function transformStrategy(strategy: any) {
             positional: "False"
         }
     };
-
     return output;
 }
 
-const formatTime = (time: any) => {
+function formatTime(time: any){
     if (time.length === 4 && !time.includes(':')) {
         return `${time.slice(0, 2)}:${time.slice(2)}`;
     }
