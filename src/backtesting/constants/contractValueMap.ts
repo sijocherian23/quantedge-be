@@ -3,5 +3,4 @@ export const contractValueTypeMap: Map<string, string> = new Map([
     ["MORE", "EntryByPremiumGEQ"],
     ["BETWEEN", "EntryByPremiumRange"],
     ["AROUND", "EntryByPremium"]
-  ]);
-  
+]);
