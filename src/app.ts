@@ -75,7 +75,25 @@ app.post("/backtest", async (req, res) => {
 
 app.post("/backtestDetails/:backtestId", async (req, res) => {
   const { backtestId } = req.params;
-  const backTestDetails = await getBacktestResults(backtestId);
-  res.send(backTestDetails);
+
+  try {
+    // Fetching backtest details
+    const backTestDetails = await getBacktestResults(backtestId);
+
+    // Send the backtest details if successful
+    res.status(200).send(backTestDetails);
+  } catch (error: any) {
+    // Handle errors, log them, and send a proper response to the client
+    console.error(`Error in backtestDetails route:`, error.message || "Internal Server Error");
+
+    // Send a 500 status code with an error message
+    res.status(500).json({
+      success: false,
+      message: error.message || "Internal Server Error",
+      errorDetails:
+        error.response?.data ||
+        "An error occurred while fetching the backtest data.",
+    });
+  }
 });
 
