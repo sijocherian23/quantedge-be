@@ -54,11 +54,11 @@ export function transformStrategy(strategy: any) {
     const lotSize = strategy.lot_size;
     const stopLossValue = strategy.risk_management.stop_loss.value;
     const takeProfitValue = strategy.risk_management.take_profit.value;
-    const entryTime = strategy.entry_trigger.value.split(':');
-    const exitTime = strategy.exit_time.split(':');
+    const entryTime = formatTime(strategy.entry_trigger.value).split(':');
+    const exitTime = formatTime(strategy.exit_time).split(':');
     const contractValueType: string = strategy.contract_value.type;
-    const entryType = contractValueTypeMap.get(contractValueType)
-    const strikeParameter = strategy.contract_value.value;
+    const entryType = contractValueTypeMap.get(contractValueType.toUpperCase())
+    const strikeParameter = getStrikeParameter(strategy.contract_value.value, contractValueType.toUpperCase());
 
     const output = {
         strategy_id: null,
@@ -200,12 +200,29 @@ export function transformStrategy(strategy: any) {
             }
         },
         attributes: {
-            template: strategy.strategy_name === "Options Buying Strategy" ? "Straddle920" : "",
+            template: "Straddle920",
             positional: "False"
         }
     };
 
     return output;
+}
+
+const formatTime = (time: any) => {
+    if (time.length === 4 && !time.includes(':')) {
+        return `${time.slice(0, 2)}:${time.slice(2)}`;
+    }
+    return time; // If time is already in "HH:mm", return as is
+};
+
+function getStrikeParameter(contractValue: any, contractType: any) {
+    if (contractType === "BETWEEN") {
+        return {
+            LowerRange: contractValue[0],
+            UpperRange: contractValue[1],
+        };
+    }
+    return contractValue;
 }
 
 export async function getBacktestResults(backtestId: string) {
