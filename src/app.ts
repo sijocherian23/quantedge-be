@@ -1,92 +1,49 @@
 import express from "express";
-import { Server } from "socket.io";
 import http from "http";
-import axios from "axios"; // For calling ChatGPT API
-import OpenAI from "openai";
-import { ChatCompletionMessageParam } from "openai/resources";
+import { Server } from "socket.io";
+import userRoute from "./users";
+import conversationRoute from "./conversations";
+import historyRoute from "./conversationHistory";
+import { initializeSocket } from "./socket";
+
 const fs = require("fs");
 const path = require("path");
 
 
 import dotenv from "dotenv";
 import { getBacktestResults, login, runBacktest, transformStrategy } from "./backtesting/service";
+
+
 dotenv.config();
 
 const app = express();
 app.use(express.json());
 const server = http.createServer(app);
+app.use((req, res, next) => {
+  res.header("Access-Control-Allow-Origin", "*");
+  res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
+  next();
+});
 const io = new Server(server, {
   cors: {
     origin: "*",
   },
 });
 
-const PORT = 8000;
+const PORT = 3000;
 
-// Store chat history in memory (use a database for production)
-const chatHistory: {
-  [sessionId: string]: ChatCompletionMessageParam[];
-} = {};
+// Middleware for parsing JSON
+app.use(express.json());
 
-// OpenAI API setup (replace with your own API key)
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
+// Initialize WebSocket
+initializeSocket(io);
 
-// Handle new connections
-io.on("connection", (socket) => {
-  console.log(`User connected: ${socket.id}`);
+// Define API routes
+app.use("/api/users", userRoute);
+app.use("/api/conversations", conversationRoute);
+app.use("/api/conversation-history", historyRoute);
 
-  // Listen for 'send-message' from client
-  socket.on("send-message", async (data) => {
-    const { user, message } = data;
-    const sessionId = socket.id;
-
-    // Initialize session if not existing
-    if (!chatHistory[sessionId]) {
-      chatHistory[sessionId] = [];
-    }
-
-    // Add user's message to chat history
-    chatHistory[sessionId].push({ role: "user", content: message });
-
-    // Prepare messages for ChatGPT
-    const messages: ChatCompletionMessageParam[] = chatHistory[sessionId];
-
-    try {
-      console.log(messages);
-
-      // Send the chat history to ChatGPT API
-      const response = await openai.chat.completions.create({
-        model: "gpt-4", // Use the desired GPT model
-        messages,
-      });
-
-      const botResponse = response.choices[0].message?.content;
-
-      // Add ChatGPT's response to chat history
-      chatHistory[sessionId].push({
-        role: "assistant",
-        content: botResponse || "",
-      });
-
-      // Send the response back to the user
-      socket.emit("receive-message", { user: "ChatGPT", message: botResponse });
-    } catch (error) {
-      console.error("Error communicating with ChatGPT API:", error);
-      socket.emit("receive-message", {
-        user: "ChatGPT",
-        message: "Error processing your request.",
-      });
-    }
-  });
-
-  // Handle disconnection
-  socket.on("disconnect", () => {
-    console.log(`User disconnected: ${socket.id}`);
-  });
-});
-
+// Test route
 app.get("/test", (req, res) => {
   res.send("Hello World!");
 });
@@ -116,7 +73,7 @@ app.post("/backtest", async (req, res) => {
   }
 })
 
-app.get("/backtestDetails/:backtestId", async (req, res) => {
+app.post("/backtestDetails/:backtestId", async (req, res) => {
   const { backtestId } = req.params;
   const backTestDetails = await getBacktestResults(backtestId);
   res.send(backTestDetails);

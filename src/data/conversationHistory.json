@@ -1,0 +1,58 @@
+[
+  {
+    "id": "123",
+    "messages": [
+      {
+        "role": "user",
+        "content": "hi"
+      },
+      {
+        "role": "Bot",
+        "content": {
+          "message": "IRRELEVANT TO THE CONTEXT",
+          "json_obj": {
+            "strategy_name": "xxx",
+            "asset": {
+              "symbol": "NIFTY",
+              "type": [
+                "CE",
+                "PE"
+              ],
+              "expiry": {
+                "cycle": "weekly",
+                "frequency": "monthly"
+              }
+            },
+            "entry_trigger": {
+              "type": "time",
+              "value": "1045"
+            },
+            "contract_value": {
+              "type": "between",
+              "value": [
+                2,
+                5
+              ]
+            },
+            "lot_size": 45,
+            "risk_management": {
+              "stop_loss": {
+                "type": "percentage",
+                "value": 500
+              },
+              "take_profit": {
+                "type": "percentage",
+                "value": 100
+              }
+            },
+            "exit_time": "1515",
+            "actions": {
+              "entry": "sell",
+              "exit": "buy"
+            }
+          }
+        }
+      }
+    ]
+  }
+]
